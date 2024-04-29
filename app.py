@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request
 import cv2
 import numpy as np
+import os
 
 app = Flask(__name__)
 
@@ -41,11 +42,15 @@ def upload():
     if file.filename == '':
         return render_template('index.html', error='No selected file')
     if file:
-        image = cv2.imdecode(np.fromstring(file.read(), np.uint8), cv2.IMREAD_COLOR)
+        filename = file.filename
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(filepath)  # Save the uploaded file to a folder
+        image = cv2.imread(filepath)
         grayscale_image = grayscale(image)
         binary_image = binarize(grayscale_image)
         return render_template('result.html', grayscale=grayscale_image, binary=binary_image)
     return render_template('index.html', error='Error in uploading file')
+
 
 @app.route('/morphology', methods=['POST'])
 def morphology():
@@ -56,7 +61,7 @@ def morphology():
     if file.filename == '':
         return render_template('index.html', error='No selected file')
     if file:
-        image = cv2.imdecode(np.fromstring(file.read(), np.uint8), cv2.IMREAD_GRAYSCALE)
+        image = cv2.imread(file, cv2.IMREAD_GRAYSCALE)
         if operation == 'dilate':
             result = dilate(image)
         elif operation == 'erode':
@@ -76,7 +81,7 @@ def count():
     if file.filename == '':
         return render_template('index.html', error='No selected file')
     if file:
-        image = cv2.imdecode(np.fromstring(file.read(), np.uint8), cv2.IMREAD_GRAYSCALE)
+        image = cv2.imread(file, cv2.IMREAD_GRAYSCALE)
         objects_count = count_objects(image)
         return render_template('count_result.html', count=objects_count)
     return render_template('index.html', error='Error in uploading file')
